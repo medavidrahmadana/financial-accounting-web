@@ -1,10 +1,12 @@
 <script setup>
 const { fetchApi } = useApi()
-const toast = inject('toast')
 
 const transactions = ref([])
 const coas = ref([])
 const loading = ref(true)
+const searchQuery = ref('')
+const selectedCoaFilter = ref('')
+
 const showModal = ref(false)
 const showDeleteModal = ref(false)
 
@@ -13,7 +15,7 @@ const form = ref({
   date: new Date().toISOString().split('T')[0],
   coa_id: '',
   description: '',
-  type: 'credit', // 'debit' or 'credit'
+  type: 'credit',
   amount: 0
 })
 
@@ -29,11 +31,21 @@ const loadData = async () => {
     transactions.value = resTransactions.data
     coas.value = resCoas.data
   } catch (err) {
-    toast?.addToast('Failed to load transaction data', 'error')
+    console.error('Failed to load transaction data', err)
   } finally {
     loading.value = false
   }
 }
+
+const filteredTransactions = computed(() => {
+  return transactions.value.filter(item => {
+    const q = searchQuery.value.toLowerCase()
+    const matchesSearch = item.description.toLowerCase().includes(q) || 
+                          (item.coa?.name && item.coa.name.toLowerCase().includes(q))
+    const matchesCoa = selectedCoaFilter.value === '' || String(item.coa_id) === String(selectedCoaFilter.value)
+    return matchesSearch && matchesCoa
+  })
+})
 
 const formatCurrency = (val) => {
   if (!val || val === 0) return '-'
@@ -86,7 +98,7 @@ const closeDeleteModal = () => {
 
 const saveTransaction = async () => {
   if (!form.value.date || !form.value.coa_id || !form.value.description || !form.value.amount) {
-    toast?.addToast('Please fill in all required fields', 'error')
+    alert('Please fill in all required fields')
     return
   }
 
@@ -104,18 +116,16 @@ const saveTransaction = async () => {
         method: 'PUT',
         body: payload
       })
-      toast?.addToast('Transaction updated successfully!', 'success')
     } else {
       await fetchApi('/transactions', {
         method: 'POST',
         body: payload
       })
-      toast?.addToast('Transaction recorded successfully!', 'success')
     }
     closeModal()
     loadData()
   } catch (err) {
-    toast?.addToast('Failed to save transaction', 'error')
+    alert('Failed to save transaction')
   }
 }
 
@@ -123,11 +133,10 @@ const deleteTransaction = async () => {
   if (!itemToDelete.value) return
   try {
     await fetchApi(`/transactions/${itemToDelete.value.id}`, { method: 'DELETE' })
-    toast?.addToast('Transaction deleted successfully!', 'success')
     closeDeleteModal()
     loadData()
   } catch (err) {
-    toast?.addToast('Failed to delete transaction', 'error')
+    alert('Failed to delete transaction')
   }
 }
 
@@ -156,6 +165,39 @@ onMounted(() => {
       </button>
     </div>
 
+    <!-- Search & Filter Controls -->
+    <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+      <div class="relative w-full sm:max-w-md">
+        <input 
+          v-model="searchQuery" 
+          type="text" 
+          placeholder="Search by description or COA name..." 
+          class="w-full bg-slate-900 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 text-sm"
+        />
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3 w-full sm:w-auto">
+        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">Filter COA:</label>
+        <div class="relative w-full sm:w-56">
+          <select 
+            v-model="selectedCoaFilter" 
+            class="w-full appearance-none bg-slate-900 border border-slate-700/80 rounded-xl pl-4 pr-10 py-2.5 text-white focus:outline-none focus:border-emerald-500 text-sm cursor-pointer"
+          >
+            <option value="">All Accounts</option>
+            <option v-for="c in coas" :key="c.id" :value="c.id">
+              {{ c.code }} - {{ c.name }}
+            </option>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Responsive Data Table Container -->
     <div class="bg-slate-800 border border-slate-700/80 rounded-2xl overflow-hidden shadow-xl">
       <div v-if="loading" class="p-8 text-center text-slate-400">Loading transaction history...</div>
@@ -173,7 +215,7 @@ onMounted(() => {
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-700/50">
-            <tr v-for="item in transactions" :key="item.id" class="hover:bg-slate-700/30 transition-colors">
+            <tr v-for="item in filteredTransactions" :key="item.id" class="hover:bg-slate-700/30 transition-colors">
               <td class="px-6 py-4 whitespace-nowrap font-mono text-xs text-slate-400">{{ formatDate(item.date) }}</td>
               <td class="px-6 py-4 font-mono font-bold text-emerald-400">{{ item.coa?.code || '-' }}</td>
               <td class="px-6 py-4 font-semibold text-white">
@@ -214,15 +256,15 @@ onMounted(() => {
                 </div>
               </td>
             </tr>
-            <tr v-if="transactions.length === 0">
-              <td colspan="7" class="px-6 py-8 text-center text-slate-500">No transactions recorded yet.</td>
+            <tr v-if="filteredTransactions.length === 0">
+              <td colspan="7" class="px-6 py-8 text-center text-slate-500">No transactions matching your filter.</td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- Responsive Form Add/Edit Transaction Modal -->
+    <!-- Modals -->
     <div v-if="showModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl">
         <div class="flex items-center justify-between border-b border-slate-700/60 pb-4">
@@ -305,7 +347,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Custom Delete Confirmation Modal -->
     <div v-if="showDeleteModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl text-center">
         <div class="w-14 h-14 bg-rose-500/20 text-rose-400 rounded-2xl flex items-center justify-center mx-auto border border-rose-500/30 shadow-lg shadow-rose-500/10">
@@ -329,6 +370,5 @@ onMounted(() => {
         </div>
       </div>
     </div>
-
   </div>
 </template>

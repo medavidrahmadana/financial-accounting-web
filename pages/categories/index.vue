@@ -1,9 +1,11 @@
 <script setup>
 const { fetchApi } = useApi()
-const toast = inject('toast')
 
 const categories = ref([])
 const loading = ref(true)
+const searchQuery = ref('')
+const selectedType = ref('')
+
 const showModal = ref(false)
 const showDeleteModal = ref(false)
 
@@ -21,11 +23,19 @@ const loadCategories = async () => {
     const res = await fetchApi('/categories')
     categories.value = res.data
   } catch (err) {
-    toast?.addToast('Failed to load categories', 'error')
+    console.error('Failed to load categories', err)
   } finally {
     loading.value = false
   }
 }
+
+const filteredCategories = computed(() => {
+  return categories.value.filter(cat => {
+    const matchesSearch = cat.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    const matchesType = selectedType.value === '' || cat.type === selectedType.value
+    return matchesSearch && matchesType
+  })
+})
 
 const openModal = (category = null) => {
   if (category) {
@@ -58,18 +68,16 @@ const saveCategory = async () => {
         method: 'PUT',
         body: form.value
       })
-      toast?.addToast('Category updated successfully!', 'success')
     } else {
       await fetchApi('/categories', {
         method: 'POST',
         body: form.value
       })
-      toast?.addToast('Category created successfully!', 'success')
     }
     closeModal()
     loadCategories()
   } catch (err) {
-    toast?.addToast('Failed to save category', 'error')
+    alert('Failed to save category')
   }
 }
 
@@ -77,11 +85,10 @@ const deleteCategory = async () => {
   if (!itemToDelete.value) return
   try {
     await fetchApi(`/categories/${itemToDelete.value.id}`, { method: 'DELETE' })
-    toast?.addToast(`Category '${itemToDelete.value.name}' deleted!`, 'success')
     closeDeleteModal()
     loadCategories()
   } catch (err) {
-    toast?.addToast('Failed to delete category', 'error')
+    alert('Failed to delete category')
   }
 }
 
@@ -110,6 +117,38 @@ onMounted(() => {
       </button>
     </div>
 
+    <!-- Search & Filter Controls -->
+    <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+      <div class="relative w-full sm:max-w-md">
+        <input 
+          v-model="searchQuery" 
+          type="text" 
+          placeholder="Search category name..." 
+          class="w-full bg-slate-900 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 text-sm"
+        />
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3 w-full sm:w-auto">
+        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">Filter Type:</label>
+        <div class="relative w-full sm:w-44">
+          <select 
+            v-model="selectedType" 
+            class="w-full appearance-none bg-slate-900 border border-slate-700/80 rounded-xl pl-4 pr-10 py-2.5 text-white focus:outline-none focus:border-emerald-500 text-sm cursor-pointer"
+          >
+            <option value="">All Types</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Responsive Data Table Container -->
     <div class="bg-slate-800 border border-slate-700/80 rounded-2xl overflow-hidden shadow-xl">
       <div v-if="loading" class="p-8 text-center text-slate-400">Loading categories...</div>
@@ -125,7 +164,7 @@ onMounted(() => {
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-700/50">
-            <tr v-for="item in categories" :key="item.id" class="hover:bg-slate-700/30 transition-colors">
+            <tr v-for="item in filteredCategories" :key="item.id" class="hover:bg-slate-700/30 transition-colors">
               <td class="px-6 py-4 font-mono text-slate-400">#{{ item.id }}</td>
               <td class="px-6 py-4 font-semibold text-white">{{ item.name }}</td>
               <td class="px-6 py-4">
@@ -164,15 +203,15 @@ onMounted(() => {
                 </div>
               </td>
             </tr>
-            <tr v-if="categories.length === 0">
-              <td colspan="5" class="px-6 py-8 text-center text-slate-500">No categories found.</td>
+            <tr v-if="filteredCategories.length === 0">
+              <td colspan="5" class="px-6 py-8 text-center text-slate-500">No categories matching your filter.</td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- Responsive & Rounded Custom Select Form Add/Edit Modal -->
+    <!-- Modals -->
     <div v-if="showModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl">
         <div class="flex items-center justify-between border-b border-slate-700/60 pb-4">
@@ -194,7 +233,6 @@ onMounted(() => {
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Type</label>
-            <!-- Styled Dropdown Select with Extra Padding Right for Arrow -->
             <div class="relative">
               <select 
                 v-model="form.type" 
@@ -217,7 +255,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Responsive Custom Delete Confirmation Modal -->
     <div v-if="showDeleteModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl text-center">
         <div class="w-14 h-14 bg-rose-500/20 text-rose-400 rounded-2xl flex items-center justify-center mx-auto border border-rose-500/30 shadow-lg shadow-rose-500/10">
@@ -241,6 +278,5 @@ onMounted(() => {
         </div>
       </div>
     </div>
-
   </div>
 </template>

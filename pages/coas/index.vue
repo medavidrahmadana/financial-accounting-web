@@ -1,10 +1,12 @@
 <script setup>
 const { fetchApi } = useApi()
-const toast = inject('toast')
 
 const coas = ref([])
 const categories = ref([])
 const loading = ref(true)
+const searchQuery = ref('')
+const selectedCategory = ref('')
+
 const showModal = ref(false)
 const showDeleteModal = ref(false)
 
@@ -27,11 +29,20 @@ const loadData = async () => {
     coas.value = resCoas.data
     categories.value = resCategories.data
   } catch (err) {
-    toast?.addToast('Failed to load COA data', 'error')
+    console.error('Failed to load COA data', err)
   } finally {
     loading.value = false
   }
 }
+
+const filteredCoas = computed(() => {
+  return coas.value.filter(item => {
+    const q = searchQuery.value.toLowerCase()
+    const matchesSearch = item.name.toLowerCase().includes(q) || String(item.code).includes(q)
+    const matchesCategory = selectedCategory.value === '' || String(item.category_id) === String(selectedCategory.value)
+    return matchesSearch && matchesCategory
+  })
+})
 
 const openModal = (item = null) => {
   if (item) {
@@ -74,18 +85,16 @@ const saveCoa = async () => {
         method: 'PUT',
         body: form.value
       })
-      toast?.addToast('Chart of Account updated successfully!', 'success')
     } else {
       await fetchApi('/coas', {
         method: 'POST',
         body: form.value
       })
-      toast?.addToast('Chart of Account created successfully!', 'success')
     }
     closeModal()
     loadData()
   } catch (err) {
-    toast?.addToast('Failed to save Chart of Account', 'error')
+    alert('Failed to save Chart of Account')
   }
 }
 
@@ -93,11 +102,10 @@ const deleteCoa = async () => {
   if (!itemToDelete.value) return
   try {
     await fetchApi(`/coas/${itemToDelete.value.id}`, { method: 'DELETE' })
-    toast?.addToast(`Account '${itemToDelete.value.name}' deleted!`, 'success')
     closeDeleteModal()
     loadData()
   } catch (err) {
-    toast?.addToast('Failed to delete Chart of Account', 'error')
+    alert('Failed to delete Chart of Account')
   }
 }
 
@@ -126,6 +134,39 @@ onMounted(() => {
       </button>
     </div>
 
+    <!-- Search & Filter Controls -->
+    <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+      <div class="relative w-full sm:max-w-md">
+        <input 
+          v-model="searchQuery" 
+          type="text" 
+          placeholder="Search by code or account name..." 
+          class="w-full bg-slate-900 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 text-sm"
+        />
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3 w-full sm:w-auto">
+        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">Category:</label>
+        <div class="relative w-full sm:w-48">
+          <select 
+            v-model="selectedCategory" 
+            class="w-full appearance-none bg-slate-900 border border-slate-700/80 rounded-xl pl-4 pr-10 py-2.5 text-white focus:outline-none focus:border-emerald-500 text-sm cursor-pointer"
+          >
+            <option value="">All Categories</option>
+            <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+              {{ cat.name }}
+            </option>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Responsive Data Table Container -->
     <div class="bg-slate-800 border border-slate-700/80 rounded-2xl overflow-hidden shadow-xl">
       <div v-if="loading" class="p-8 text-center text-slate-400">Loading Chart of Accounts...</div>
@@ -140,7 +181,7 @@ onMounted(() => {
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-700/50">
-            <tr v-for="item in coas" :key="item.id" class="hover:bg-slate-700/30 transition-colors">
+            <tr v-for="item in filteredCoas" :key="item.id" class="hover:bg-slate-700/30 transition-colors">
               <td class="px-6 py-4 font-mono font-bold text-emerald-400">{{ item.code }}</td>
               <td class="px-6 py-4 font-semibold text-white">{{ item.name }}</td>
               <td class="px-6 py-4">
@@ -175,15 +216,15 @@ onMounted(() => {
                 </div>
               </td>
             </tr>
-            <tr v-if="coas.length === 0">
-              <td colspan="4" class="px-6 py-8 text-center text-slate-500">No Chart of Accounts found.</td>
+            <tr v-if="filteredCoas.length === 0">
+              <td colspan="4" class="px-6 py-8 text-center text-slate-500">No Chart of Accounts matching your filter.</td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- Responsive & Custom Select Form Add/Edit Modal -->
+    <!-- Modals -->
     <div v-if="showModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl">
         <div class="flex items-center justify-between border-b border-slate-700/60 pb-4">
@@ -239,7 +280,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Responsive Custom Delete Confirmation Modal -->
     <div v-if="showDeleteModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl text-center">
         <div class="w-14 h-14 bg-rose-500/20 text-rose-400 rounded-2xl flex items-center justify-center mx-auto border border-rose-500/30 shadow-lg shadow-rose-500/10">
@@ -263,6 +303,5 @@ onMounted(() => {
         </div>
       </div>
     </div>
-
   </div>
 </template>
