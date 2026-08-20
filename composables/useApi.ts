@@ -1,16 +1,23 @@
+// API Composable with Production Railway Fallback
 export const useApi = () => {
-  const fetchApi = async (endpoint, options = {}) => {
-    // Standard Laravel Artisan Serve IP / localhost fallback
-    const baseUrl = 'http://127.0.0.1:8000/api'
-    
-    return await $fetch(`${baseUrl}${endpoint}`, {
+  const config = useRuntimeConfig()
+  
+  // Default to Railway Production API URL if runtime config is not provided
+  const baseURL = config.public.apiBase || 'https://financial-accounting-api-production.up.railway.app/api'
+
+  const fetchApi = async (endpoint: string, options: any = {}) => {
+    return await $fetch(`${baseURL}${endpoint}`, {
+      ...options,
       headers: {
         'Accept': 'application/json',
+        'Content-Type': 'application/json',
         ...options.headers
-      },
-      ...options
+      }
     })
   }
 
-  return { fetchApi }
+  return {
+    fetchApi,
+    baseURL
+  }
 }
