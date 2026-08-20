@@ -1,123 +1,126 @@
 <script setup>
-const toasts = ref([])
-const mobileMenuOpen = ref(false)
+const { currency, isDark, toggleTheme } = useAppSettings()
 
-const addToast = (message, type = 'success') => {
-  const id = Date.now()
-  toasts.value.push({ id, message, type })
-  setTimeout(() => {
-    removeToast(id)
-  }, 4000)
-}
-
-const removeToast = (id) => {
-  toasts.value = toasts.value.filter(t => t.id !== id)
-}
-
-provide('toast', { addToast })
+const currencyOptions = [
+  { value: 'IDR', label: 'IDR (Rp)' },
+  { value: 'USD', label: 'USD ($)' },
+  { value: 'EUR', label: 'EUR (€)' },
+  { value: 'SGD', label: 'SGD (S$)' }
+]
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans relative">
-    <!-- Top Navbar -->
-    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-40">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-          <div class="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center font-bold text-slate-950 text-xl shadow-lg shadow-emerald-500/20">
-            F
+  <div class="min-h-screen flex flex-col transition-colors duration-200" :class="isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'">
+    <!-- Top Navigation Bar -->
+    <header class="border-b sticky top-0 z-40 backdrop-blur-md transition-colors duration-200" :class="isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-200 shadow-sm'">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <!-- Logo & Brand -->
+          <NuxtLink to="/" class="flex items-center space-x-3 group">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-black text-lg shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
+              F
+            </div>
+            <span class="font-bold text-lg tracking-tight transition-colors" :class="isDark ? 'text-white' : 'text-slate-900'">
+              Financial <span class="text-emerald-500">App</span>
+            </span>
+          </NuxtLink>
+
+          <!-- Desktop Navigation Links -->
+          <nav class="hidden md:flex items-center space-x-1">
+            <NuxtLink 
+              to="/" 
+              class="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+              :class="isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'"
+              exact-active-class="!bg-emerald-500/10 !text-emerald-500 font-bold"
+            >
+              Dashboard
+            </NuxtLink>
+            <NuxtLink 
+              to="/categories" 
+              class="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+              :class="isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'"
+              active-class="!bg-emerald-500/10 !text-emerald-500 font-bold"
+            >
+              Category COA
+            </NuxtLink>
+            <NuxtLink 
+              to="/coas" 
+              class="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+              :class="isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'"
+              active-class="!bg-emerald-500/10 !text-emerald-500 font-bold"
+            >
+              Chart of Accounts
+            </NuxtLink>
+            <NuxtLink 
+              to="/transactions" 
+              class="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+              :class="isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'"
+              active-class="!bg-emerald-500/10 !text-emerald-500 font-bold"
+            >
+              Transactions
+            </NuxtLink>
+            <NuxtLink 
+              to="/reports" 
+              class="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+              :class="isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'"
+              active-class="!bg-emerald-500/10 !text-emerald-500 font-bold"
+            >
+              Profit & Loss Report
+            </NuxtLink>
+            <NuxtLink 
+              to="/about" 
+              class="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+              :class="isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'"
+              active-class="!bg-emerald-500/10 !text-emerald-500 font-bold"
+            >
+              About
+            </NuxtLink>
+          </nav>
+
+          <!-- Right Tools: Multi-Currency Selector & Theme Toggle -->
+          <div class="flex items-center space-x-3">
+            <!-- Currency Switcher -->
+            <div class="w-28 sm:w-32">
+              <CustomSelect v-model="currency" :options="currencyOptions" placeholder="Currency" />
+            </div>
+
+            <!-- Dark / Light Theme Toggle Button -->
+            <button 
+              @click="toggleTheme" 
+              title="Toggle Dark / Light Theme"
+              class="p-2 rounded-xl border transition-all"
+              :class="isDark ? 'bg-slate-800 border-slate-700 text-amber-400 hover:bg-slate-700' : 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200'"
+            >
+              <!-- Sun Icon for Light Mode -->
+              <svg v-if="isDark" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+              <!-- Moon Icon for Dark Mode -->
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            </button>
           </div>
-          <span class="font-bold text-lg tracking-tight text-white">Financial App</span>
         </div>
-        
-        <!-- Desktop Navigation Links -->
-        <nav class="hidden md:flex items-center space-x-2">
-          <NuxtLink to="/categories" class="px-3.5 py-2 rounded-xl text-sm font-medium transition-colors" :class="$route.path === '/categories' ? 'bg-slate-700 text-emerald-400 font-semibold' : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'">
-            Category COA
-          </NuxtLink>
-          <NuxtLink to="/coas" class="px-3.5 py-2 rounded-xl text-sm font-medium transition-colors" :class="$route.path === '/coas' ? 'bg-slate-700 text-emerald-400 font-semibold' : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'">
-            Chart of Accounts
-          </NuxtLink>
-          <NuxtLink to="/transactions" class="px-3.5 py-2 rounded-xl text-sm font-medium transition-colors" :class="$route.path === '/transactions' ? 'bg-slate-700 text-emerald-400 font-semibold' : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'">
-            Transactions
-          </NuxtLink>
-          <NuxtLink to="/reports" class="px-3.5 py-2 rounded-xl text-sm font-medium transition-colors" :class="$route.path === '/reports' ? 'bg-slate-700 text-emerald-400 font-semibold' : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'">
-            Profit & Loss Report
-          </NuxtLink>
-        </nav>
-
-        <!-- Mobile Hamburger Button -->
-        <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700">
-          <svg v-if="!mobileMenuOpen" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-          <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-        </button>
-      </div>
-
-      <!-- Mobile Dropdown Menu -->
-      <div v-if="mobileMenuOpen" class="md:hidden bg-slate-800/95 border-b border-slate-700 px-4 pt-2 pb-4 space-y-1">
-        <NuxtLink @click="mobileMenuOpen = false" to="/categories" class="block px-3 py-2 rounded-lg text-base font-medium" :class="$route.path === '/categories' ? 'bg-slate-700 text-emerald-400' : 'text-slate-300'">
-          Category COA
-        </NuxtLink>
-        <NuxtLink @click="mobileMenuOpen = false" to="/coas" class="block px-3 py-2 rounded-lg text-base font-medium" :class="$route.path === '/coas' ? 'bg-slate-700 text-emerald-400' : 'text-slate-300'">
-          Chart of Accounts
-        </NuxtLink>
-        <NuxtLink @click="mobileMenuOpen = false" to="/transactions" class="block px-3 py-2 rounded-lg text-base font-medium" :class="$route.path === '/transactions' ? 'bg-slate-700 text-emerald-400' : 'text-slate-300'">
-          Transactions
-        </NuxtLink>
-        <NuxtLink @click="mobileMenuOpen = false" to="/reports" class="block px-3 py-2 rounded-lg text-base font-medium" :class="$route.path === '/reports' ? 'bg-slate-700 text-emerald-400' : 'text-slate-300'">
-          Profit & Loss Report
-        </NuxtLink>
       </div>
     </header>
 
-    <!-- Main Content Container -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <!-- Main Content Area with Flex Grow -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <slot />
     </main>
 
-    <!-- Sleek Custom Toast Notifications Container - Positioned TOP RIGHT -->
-    <div class="fixed top-20 right-4 sm:right-6 z-50 flex flex-col space-y-2 max-w-sm w-full pointer-events-none px-4 sm:px-0">
-      <TransitionGroup name="toast">
-        <div 
-          v-for="toast in toasts" 
-          :key="toast.id" 
-          class="pointer-events-auto p-4 rounded-2xl border shadow-2xl flex items-center justify-between space-x-3 transform transition-all duration-300 bg-slate-800/95 backdrop-blur-md"
-          :class="toast.type === 'success' ? 'border-emerald-500/50 text-emerald-400 shadow-emerald-950/20' : 'border-rose-500/50 text-rose-400 shadow-rose-950/20'"
-        >
-          <div class="flex items-center space-x-3">
-            <div 
-              class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-              :class="toast.type === 'success' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'"
-            >
-              <svg v-if="toast.type === 'success'" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-            </div>
-            <span class="text-sm font-medium text-slate-200">{{ toast.message }}</span>
-          </div>
-          <button @click="removeToast(toast.id)" class="text-slate-500 hover:text-slate-300">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-          </button>
-        </div>
-      </TransitionGroup>
-    </div>
-
-    <!-- Footer -->
-    <footer class="border-t border-slate-800 bg-slate-950 py-6 text-center text-xs text-slate-500">
-      Financial Accounting Webapp &copy; 2026. Decoupled Architecture (Laravel 11 + Nuxt 3).
+    <!-- Footer Sticky Bottom Sticky Flex -->
+    <footer class="border-t py-6 text-center text-xs transition-colors duration-200 mt-auto" :class="isDark ? 'border-slate-800/80 text-slate-500 bg-slate-950' : 'border-slate-200 text-slate-400 bg-white'">
+      Financial Accounting Webapp © 2026. Designed & Developed by <span class="font-bold" :class="isDark ? 'text-emerald-400' : 'text-emerald-600'">David Gholi Rahmadana</span> (Laravel 11 + Nuxt 3).
     </footer>
   </div>
 </template>
-
-<style scoped>
-.toast-enter-active,
-.toast-leave-active {
-  transition: all 0.3s ease;
-}
-.toast-enter-from {
-  opacity: 0;
-  transform: translateY(-20px) scale(0.95);
-}
-.toast-leave-to {
-  opacity: 0;
-  transform: translateX(100px);
-}
-</style>
