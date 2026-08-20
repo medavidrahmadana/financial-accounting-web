@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://financial-accounting-web.vercel.app/</loc>
+    <loc>https://finacc-systems.vercel.app/</loc>
     <priority>1.0</priority>
     <changefreq>daily</changefreq>
   </url>
   <url>
-    <loc>https://financial-accounting-web.vercel.app/categories</loc>
+    <loc>https://finacc-systems.vercel.app/categories</loc>
     <priority>0.8</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://financial-accounting-web.vercel.app/coas</loc>
+    <loc>https://finacc-systems.vercel.app/coas</loc>
     <priority>0.8</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://financial-accounting-web.vercel.app/transactions</loc>
+    <loc>https://finacc-systems.vercel.app/transactions</loc>
     <priority>0.9</priority>
     <changefreq>daily</changefreq>
   </url>
   <url>
-    <loc>https://financial-accounting-web.vercel.app/reports</loc>
+    <loc>https://finacc-systems.vercel.app/reports</loc>
     <priority>0.9</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://financial-accounting-web.vercel.app/about</loc>
+    <loc>https://finacc-systems.vercel.app/about</loc>
     <priority>0.7</priority>
     <changefreq>monthly</changefreq>
   </url>
