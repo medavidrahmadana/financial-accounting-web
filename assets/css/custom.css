@@ -1,0 +1,32 @@
+/* Custom Scrollbar Dynamic (Supports Light & Dark Theme) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1; /* Slate 300 for Light Mode */
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #10b981; /* Emerald 500 */
+}
+
+/* Dark Mode Scrollbar Thumb */
+.dark ::-webkit-scrollbar-thumb,
+body.dark ::-webkit-scrollbar-thumb,
+.bg-slate-950 ::-webkit-scrollbar-thumb {
+  background: #334155; /* Slate 700 for Dark Mode */
+}
+
+/* Firefox support */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
