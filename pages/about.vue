@@ -28,6 +28,21 @@ const techStack = [
   }
 ]
 
+const deploymentStack = [
+  {
+    category: 'Frontend Deployment',
+    name: 'Vercel Cloud Platform',
+    icon: '🌐',
+    rationale: 'Dipilih karena proses konfigurasi yang sangat mudah dan cepat, mendukung CI/CD otomatis (auto-deploy setiap kali ada Git Push), performa Edge Network global, serta layanan hosting gratis yang andal.'
+  },
+  {
+    category: 'Backend & DB Deployment',
+    name: 'Railway.app Cloud Service',
+    icon: '☁️',
+    rationale: 'Dipilih karena setup server Docker & MySQL yang fleksibel, mendukung runtime 24/7 nonstop secara gratis, serta kemudahan integrasi lingkungan produksi (Environment Variables & Networking).'
+  }
+]
+
 const libraries = [
   { name: 'Chart.js & Vue-ChartJS', purpose: 'Visualisasi grafik batang interaktif komparasi Income vs Expense bulanan.' },
   { name: 'Maatwebsite/Laravel-Excel (v3.1)', purpose: 'Engine generator ekspor laporan matriks Laba/Rugi format .xlsx.' },
@@ -85,6 +100,31 @@ const libraries = [
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div 
           v-for="item in techStack" 
+          :key="item.name"
+          class="border rounded-2xl p-6 shadow-lg transition-all"
+          :class="isDark ? 'bg-slate-800 border-slate-700/80 hover:border-slate-600' : 'bg-white border-slate-200 shadow-slate-200/50 hover:border-slate-300'"
+        >
+          <div class="flex items-center space-x-3 mb-3">
+            <span class="text-2xl">{{ item.icon }}</span>
+            <div>
+              <span class="text-xs font-semibold uppercase tracking-wider text-emerald-500">{{ item.category }}</span>
+              <h3 class="text-lg font-bold" :class="isDark ? 'text-white' : 'text-slate-900'">{{ item.name }}</h3>
+            </div>
+          </div>
+          <p class="text-xs leading-relaxed" :class="isDark ? 'text-slate-400' : 'text-slate-600'">
+            {{ item.rationale }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cloud Infrastructure & Deployment Section -->
+    <div class="space-y-4">
+      <h2 class="text-2xl font-bold transition-colors" :class="isDark ? 'text-white' : 'text-slate-900'">Cloud Infrastructure & Deployment</h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div 
+          v-for="item in deploymentStack" 
           :key="item.name"
           class="border rounded-2xl p-6 shadow-lg transition-all"
           :class="isDark ? 'bg-slate-800 border-slate-700/80 hover:border-slate-600' : 'bg-white border-slate-200 shadow-slate-200/50 hover:border-slate-300'"
